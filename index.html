@@ -24,15 +24,37 @@
       }
       </style>
       <script>
+
+
       window.onload = function() {
 
+          startCapture = function()
+          {
+            console.log('start capturing');
+            isCapturing = true;
+            interval = setInterval(
+                function() {
+                    height = video.videoHeight / (video.videoWidth/width);
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+                    var data = canvas.toDataURL('image/png');
+
+                    socket.emit('message', data);
+
+                    var img = document.createElement('img');
+                    img.src = data;
+                    photoContainer.prepend(img);
+                },
+                1000
+            );
+          }
+
           socket = io.connect();
-          socket.on('connect', function() {
-              console.log('connected');
-          });
 
           canvas       = document.querySelector('#canvas');
           erase        = document.querySelector('#erase');
+          capture        = document.querySelector('#capture');
           video        = document.querySelector('#camera-stream');
           photoContainer = document.querySelector('#photo-container');
           photoContainer.style.height = window.innerHeight + "px";
@@ -69,27 +91,24 @@
                photoContainer.innerHTML = '';
             }, false);
 
-            setInterval(
-                function() {
-                    height = video.videoHeight / (video.videoWidth/width);
-                    canvas.width = width;
-                    canvas.height = height;
-                    canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-                    var data = canvas.toDataURL('image/png');
+            capture.addEventListener('click', function(ev){
+                  if (isCapturing) {
+                     clearInterval(interval);
+                     isCapturing = false;
+                     console.log('capturing stopped');
+                  } else {
+                    startCapture();
+                  }
+            }, false);
 
-                    socket.emit('message', data);
-
-                    var img = document.createElement('img');
-                    img.src = data;
-                    photoContainer.prepend(img);
-                },
-                1000
-            );
+            startCapture();
 
           } else {
             alert('Sorry, your browser does not support getUserMedia');
           }
       }
+
+
       </script>
     </head>
     <body>
@@ -101,6 +120,7 @@
         <div>&nbsp;</div>
         <div style="text-align: center;">
           <button id="erase">Erase images</button>
+          <button id="capture">Stop/start capturing</button>
         </div>
       </div>
 
