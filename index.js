@@ -60,8 +60,11 @@ io.sockets.on('connection', function (socket) {
                         socket.emit('score', {id: message.id, response: data})
 
                       });
+                    } else {
+                      socket.emit('score', 'empty')
                     }
                 } else {
+                  socket.emit('score', 'empty')
                   console.log(err);
                 }
             })

@@ -25,13 +25,14 @@
       </style>
       <script>
 
-      var id = 1;
+
 
       startCapture = function()
       {
         console.log('start capturing');
         isCapturing = true;
         isRecording = false
+        var id = 1;
         interval = setInterval(
             function() {
                 /*if (!isRecording) {
@@ -48,12 +49,16 @@
                 var data = canvas.toDataURL('image/png');
 
                 socket.emit('message', {id: id, image:data});
-                id = id > 10? 1 : id+1;
-
                 var img = document.createElement('img');
                 img.id = id;
                 img.src = data;
                 photoContainer.prepend(img);
+
+                id++;
+                if (id > 4) {
+                    document.getElementById('photo-container').innerHTML = '';
+                    id = 1;
+                }
             },
             5000
         );
@@ -67,9 +72,11 @@
               var min = Math.min(...arr);
               var max = Math.max(...arr);
               var string = '';
+              var color = '';
 
               if (typeof response.scores.anger !== "undefined") {
                   if (response.scores.anger == max) {
+                    color = 'red';
                     string += "<strong>";
                   }
                   string += "Anger: " + (parseFloat(response.scores.anger).toFixed(2) * 100) + "% <br>";
@@ -80,6 +87,8 @@
               if (typeof response.scores.contempt !== "undefined") {
                   if (response.scores.contempt == max) {
                     string += "<strong>";
+                    color = 'purple';
+
                   }
                   string += "Contempt: " + (parseFloat(response.scores.contempt).toFixed(2) * 100) + "%<br>";
                   if (response.scores.contempt == max) {
@@ -89,6 +98,8 @@
               if (typeof response.scores.disgust !== "undefined") {
                   if (response.scores.disgust == max) {
                     string += "<strong>";
+                    color = 'purple';
+
                   }
                   string += "Disgust: " + (parseFloat(response.scores.disgust).toFixed(2) * 100) + "%<br>";
                   if (response.scores.disgust == max) {
@@ -98,6 +109,8 @@
               if (typeof response.scores.fear !== "undefined") {
                   if (response.scores.fear == max) {
                     string += "<strong>";
+                    color = 'green';
+
                   }
                   string += "Fear: " + (parseFloat(response.scores.fear).toFixed(2) * 100) + "%<br>";
                   if (response.scores.fear == max) {
@@ -107,6 +120,8 @@
               if (typeof response.scores.happiness !== "undefined") {
                   if (response.scores.happiness == max) {
                     string += "<strong>";
+                    color = 'yellow';
+
                   }
                   string += "Happiness: " + (parseFloat(response.scores.happiness).toFixed(2) * 100) + "%<br>";
                   if (response.scores.happiness == max) {
@@ -116,15 +131,20 @@
               if (typeof response.scores.neutral !== "undefined") {
                   if (response.scores.neutral == max) {
                     string += "<strong>";
+                    color = 'gray';
+
                   }
                   string += "Neutral: " + (parseFloat(response.scores.neutral).toFixed(2) * 100) + "%<br>";
                   if (response.scores.neutral == max) {
                     string += "</strong>";
                   }
+
               }
               if (typeof response.scores.sadness !== "undefined") {
                   if (response.scores.sadness == max) {
                     string += "<strong>";
+                    color = 'blue';
+
                   }
                   string += "Sadness: " + (parseFloat(response.scores.sadness).toFixed(2) * 100) + "%<br>";
                   if (response.scores.sadness == max) {
@@ -134,13 +154,16 @@
               if (typeof response.scores.surprise !== "undefined") {
                   if (response.scores.surprise == max) {
                     string += "<strong>";
+                    color = 'aqua';
+
                   }
                   string += "Surprise: " +(parseFloat(response.scores.surprise).toFixed(2) * 100) + "%<br>";
                   if (response.scores.surprise == max) {
                     string += "</strong>";
                   }
-              }
 
+              }
+              document.getElementById(score.id).style.border = '10px solid ' + color;
               document.querySelector('#score-container').innerHTML = string;
         }
       }
