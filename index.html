@@ -25,54 +25,18 @@
       </style>
       <script>
 
-
-
-      startCapture = function()
-      {
-        console.log('start capturing');
-        isCapturing = true;
-        isRecording = false
-        var id = 1;
-        interval = setInterval(
-            function() {
-                /*if (!isRecording) {
-                   mediaRecorder.start();
-                   isRecording = true;
-                } else {
-                  mediaRecorder.stop();
-                  isRecording = false;
-                }*/
-                height = video.videoHeight / (video.videoWidth/width);
-                canvas.width = width;
-                canvas.height = height;
-                canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-                var data = canvas.toDataURL('image/png');
-
-                socket.emit('message', {id: id, image:data});
-                var img = document.createElement('img');
-                img.id = id;
-                img.src = data;
-                photoContainer.prepend(img);
-
-                id++;
-                if (id > 4) {
-                    document.getElementById('photo-container').innerHTML = '';
-                    id = 1;
-                }
-            },
-            5000
-        );
-      }
-
       function displayScores(score)
       {
+         if (typeof score != 'object') {
+           return;
+         }
         response = score.response;
+        var color = '';
         if (typeof response.scores != "undefined") {
               var arr = Object.values(response.scores);
               var min = Math.min(...arr);
               var max = Math.max(...arr);
               var string = '';
-              var color = '';
 
               if (typeof response.scores.anger !== "undefined") {
                   if (response.scores.anger == max) {
@@ -131,7 +95,7 @@
               if (typeof response.scores.neutral !== "undefined") {
                   if (response.scores.neutral == max) {
                     string += "<strong>";
-                    color = 'gray';
+                    color = 'black';
 
                   }
                   string += "Neutral: " + (parseFloat(response.scores.neutral).toFixed(2) * 100) + "%<br>";
@@ -163,8 +127,19 @@
                   }
 
               }
-              document.getElementById(score.id).style.border = '10px solid ' + color;
+              //document.getElementById(score.id).style.border = '10px solid ' + color;
               document.querySelector('#score-container').innerHTML = string;
+        }
+
+        if (typeof response.faceRectangle != "undefined") {
+              var canvas = document.getElementById(score.id);
+              var context = canvas.getContext('2d');
+
+              context.beginPath();
+              context.rect(response.faceRectangle.left, response.faceRectangle.top, response.faceRectangle.width, response.faceRectangle.height);
+              context.lineWidth = 4;
+              context.strokeStyle = color ;
+              context.stroke();
         }
       }
 
@@ -181,6 +156,36 @@
           photoContainer.style.height = window.innerHeight + "px";
           width = 320;
           height = 0;
+
+          startCapture = function() {
+                console.log('start capturing');
+                isCapturing = true;
+                isRecording = false
+                var id = 1;
+                /*if (!isRecording) {
+                   mediaRecorder.start();
+                   isRecording = true;
+                } else {
+                  mediaRecorder.stop();
+                  isRecording = false;
+                }*/
+                canvas = document.createElement('canvas');
+                canvas.setAttribute("id", id);
+
+                height = video.videoHeight / (video.videoWidth/width);
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+                var data = canvas.toDataURL('image/png');
+                socket.emit('message', {id: id, image:data});
+                photoContainer.prepend(canvas);
+
+                id++;
+                if (id > 10) {
+                    document.getElementById('photo-container').innerHTML = '';
+                    id = 1;
+                }
+          }
 
           navigator.getUserMedia = (navigator.getUserMedia ||
                                   navigator.webkitGetUserMedia ||
@@ -255,12 +260,13 @@
             //       }
             // }, false);
 
-            startCapture();
+            setTimeout(startCapture, 1000);
 
 
             socket.on('score', function(score) {
-              console.log(score);
+                console.log(score);
                 displayScores(score);
+                startCapture();
             });
 
           } else {

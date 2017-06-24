@@ -23,6 +23,15 @@ client.on('connect', function () {
 // Chargement de socket.io
 var io = require('socket.io').listen(server);
 
+var start = process.hrtime();
+
+var elapsed_time = function(note){
+    var precision = 3; // 3 decimal places
+    var elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+    console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
+    start = process.hrtime(); // reset the timer
+}
+
 // Quand un client se connecte, on le note dans la console
 io.sockets.on('connection', function (socket) {
     // Quand le serveur reçoit un signal de type "message" du client
@@ -32,12 +41,15 @@ io.sockets.on('connection', function (socket) {
           image = message.image;
           //on stock l'image dans MQTT
           client.publish(config.MqttImageBase64Channel, JSON.stringify({id: id, image: image}));
+           elapsed_time("sent to azure storage");
           microsoftHanbdler.send(id, image, function(error, result, response) {
             if(!error){
                 client.publish(config.MqttImageUrlChannel, JSON.stringify({id: id, url:'https://hackathonai.blob.core.windows.net/adil/' + id + '.png'}));
             } else {
                 console.log(error);
             }
+            elapsed_time("Storage done");
+
           });
     });
 
@@ -53,20 +65,14 @@ io.sockets.on('connection', function (socket) {
 
             });*/
             microsoftHanbdler.analyze(message.url, function(err, res, body) {
-              console.log(body);
-                if (!err) {
-                    if (typeof body == 'object' && typeof body.error == "undefined") {
-                      body.forEach(function(data) {
-                        socket.emit('score', {id: message.id, response: data})
+                  if (typeof body == 'object' && typeof body.error == "undefined" && body.length > 0) {
+                    body.forEach(function(data) {
+                      socket.emit('score', {id: message.id, response: data})
 
-                      });
-                    } else {
-                      socket.emit('score', 'empty')
-                    }
-                } else {
-                  socket.emit('score', 'empty')
-                  console.log(err);
-                }
+                    });
+                  } else {
+                    socket.emit('score', 'empty')
+                  }
             })
 
         }
@@ -74,5 +80,5 @@ io.sockets.on('connection', function (socket) {
 
 });
 
-
+console.log("http server started");
 server.listen(3000);
