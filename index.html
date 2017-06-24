@@ -25,30 +25,128 @@
       </style>
       <script>
 
+      var id = 1;
+
+      startCapture = function()
+      {
+        console.log('start capturing');
+        isCapturing = true;
+        isRecording = false
+        interval = setInterval(
+            function() {
+                /*if (!isRecording) {
+                   mediaRecorder.start();
+                   isRecording = true;
+                } else {
+                  mediaRecorder.stop();
+                  isRecording = false;
+                }*/
+                height = video.videoHeight / (video.videoWidth/width);
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+                var data = canvas.toDataURL('image/png');
+
+                socket.emit('message', {id: id, image:data});
+                id = id > 10? 1 : id+1;
+
+                var img = document.createElement('img');
+                img.id = id;
+                img.src = data;
+                photoContainer.prepend(img);
+            },
+            5000
+        );
+      }
+
+      function displayScores(score)
+      {
+        response = score.response;
+        if (typeof response.scores != "undefined") {
+              var arr = Object.values(response.scores);
+              var min = Math.min(...arr);
+              var max = Math.max(...arr);
+              var string = '';
+
+              if (typeof response.scores.anger !== "undefined") {
+                  if (response.scores.anger == max) {
+                    string += "<strong>";
+                  }
+                  string += "Anger: " + (parseFloat(response.scores.anger).toFixed(2) * 100) + "% <br>";
+                  if (response.scores.anger == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.contempt !== "undefined") {
+                  if (response.scores.contempt == max) {
+                    string += "<strong>";
+                  }
+                  string += "Contempt: " + (parseFloat(response.scores.contempt).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.contempt == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.disgust !== "undefined") {
+                  if (response.scores.disgust == max) {
+                    string += "<strong>";
+                  }
+                  string += "Disgust: " + (parseFloat(response.scores.disgust).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.disgust == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.fear !== "undefined") {
+                  if (response.scores.fear == max) {
+                    string += "<strong>";
+                  }
+                  string += "Fear: " + (parseFloat(response.scores.fear).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.fear == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.happiness !== "undefined") {
+                  if (response.scores.happiness == max) {
+                    string += "<strong>";
+                  }
+                  string += "Happiness: " + (parseFloat(response.scores.happiness).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.happiness == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.neutral !== "undefined") {
+                  if (response.scores.neutral == max) {
+                    string += "<strong>";
+                  }
+                  string += "Neutral: " + (parseFloat(response.scores.neutral).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.neutral == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.sadness !== "undefined") {
+                  if (response.scores.sadness == max) {
+                    string += "<strong>";
+                  }
+                  string += "Sadness: " + (parseFloat(response.scores.sadness).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.sadness == max) {
+                    string += "</strong>";
+                  }
+              }
+              if (typeof response.scores.surprise !== "undefined") {
+                  if (response.scores.surprise == max) {
+                    string += "<strong>";
+                  }
+                  string += "Surprise: " +(parseFloat(response.scores.surprise).toFixed(2) * 100) + "%<br>";
+                  if (response.scores.surprise == max) {
+                    string += "</strong>";
+                  }
+              }
+
+              document.querySelector('#score-container').innerHTML = string;
+        }
+      }
 
       window.onload = function() {
 
-          startCapture = function()
-          {
-            console.log('start capturing');
-            isCapturing = true;
-            interval = setInterval(
-                function() {
-                    height = video.videoHeight / (video.videoWidth/width);
-                    canvas.width = width;
-                    canvas.height = height;
-                    canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-                    var data = canvas.toDataURL('image/png');
-
-                    socket.emit('message', data);
-
-                    var img = document.createElement('img');
-                    img.src = data;
-                    photoContainer.prepend(img);
-                },
-                10000
-            );
-          }
 
           socket = io.connect();
 
@@ -72,13 +170,46 @@
             navigator.getUserMedia(
               // Constraints
               {
-                video: true
+                video: true,
+                audio: true
               },
               // Success Callback
               function(localMediaStream) {
                     // Create an object URL for the video stream and use this
                     // to set the video source.
                     video.src = window.URL.createObjectURL(localMediaStream);
+                    /*mediaRecorder = new MediaRecorder(localMediaStream);
+                    chunks = [];
+                    mediaRecorder.ondataavailable = function(e) {
+                      chunks.push(e.data);
+                    }
+                    mediaRecorder.onstop = function(e) {
+
+                       var clipContainer = document.createElement('article');
+                       var clipLabel = document.createElement('p');
+                       var audio = document.createElement('audio');
+                       var deleteButton = document.createElement('button');
+
+                       clipContainer.classList.add('clip');
+                       audio.setAttribute('controls', '');
+                       deleteButton.innerHTML = "Delete";
+                       clipLabel.innerHTML = 'My clip';
+
+                       clipContainer.appendChild(audio);
+                       clipContainer.appendChild(clipLabel);
+                       clipContainer.appendChild(deleteButton);
+                       photoContainer.prepend(clipContainer);
+
+                          var blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+                          chunks = [];
+                          var audioURL = window.URL.createObjectURL(blob);
+                          //audio.src = audioURL;
+
+                          deleteButton.onclick = function(e) {
+                            var evtTgt = e.target;
+                            evtTgt.parentNode.parentNode.removeChild(evtTgt.parentNode);
+                          }
+                    }*/
               },
               // Error Callback
               function(err) {
@@ -91,17 +222,23 @@
                photoContainer.innerHTML = '';
             }, false);
 
-            capture.addEventListener('click', function(ev){
-                  if (isCapturing) {
-                     clearInterval(interval);
-                     isCapturing = false;
-                     console.log('capturing stopped');
-                  } else {
-                    startCapture();
-                  }
-            }, false);
+            // capture.addEventListener('click', function(ev){
+            //       if (isCapturing) {
+            //          clearInterval(interval);
+            //          isCapturing = false;
+            //          console.log('capturing stopped');
+            //       } else {
+            //         startCapture();
+            //       }
+            // }, false);
 
             startCapture();
+
+
+            socket.on('score', function(score) {
+              console.log(score);
+                displayScores(score);
+            });
 
           } else {
             alert('Sorry, your browser does not support getUserMedia');
@@ -123,11 +260,14 @@
           <button id="capture">Stop/start capturing</button>
         </div>
       </div>
+      <div>&nbsp;</div>
+
+      <div id="score-container" style="width: 20%;float: left;"></div>
 
       <div>&nbsp;</div>
       <canvas id="canvas" style="display: none";></canvas>
 
-      <div id="photo-container" style="float: right;;width: 50%;text-align: center;">
+      <div id="photo-container" style="float: right;;width: 30%;text-align: center;">
       <div>
     </body>
 </html>
