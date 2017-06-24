@@ -9,9 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "azure-storage": "^2.2.0",
     "fs": "0.0.1-security",
     "http": "0.0.0",
     "mqtt": "^2.9.0",
-    "socket.io": "^2.0.3"
+    "socket.io": "^2.0.3",
+    "stream": "0.0.2",
+    "util": "^0.10.3"
   }
 }
