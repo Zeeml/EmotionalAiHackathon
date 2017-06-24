@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>HTML5 Demo: getUserMedia (Treehouse Blog)</title>
+      <script src="/socket.io/socket.io.js"></script>
+      <style>
+      body {
+        background: #F7F7F7;
+        margin: 0;
+        padding: 0;
+      }
+
+      #video-container {
+          margin: 2em auto 0;
+          width: 500px;
+          padding: 2em;
+          background: white;
+          -webkit-box-shadow: 0 1px 10px #D9D9D9;
+          -moz-box-shadow: 0 1px 10px #D9D9D9;
+          -ms-box-shadow: 0 1px 10px #D9D9D9;
+          -o-box-shadow: 0 1px 10px #D9D9D9;
+          box-shadow: 0 1px 10px #D9D9D9;
+      }
+      </style>
+      <script>
+      window.onload = function() {
+
+          socket = io.connect();
+          socket.on('connect', function() {
+              console.log('connected');
+          });
+
+          canvas       = document.querySelector('#canvas');
+          erase        = document.querySelector('#erase');
+          video        = document.querySelector('#camera-stream');
+          photoContainer = document.querySelector('#photo-container');
+          photoContainer.style.height = window.innerHeight + "px";
+          width = 320;
+          height = 0;
+
+          navigator.getUserMedia = (navigator.getUserMedia ||
+                                  navigator.webkitGetUserMedia ||
+                                  navigator.mozGetUserMedia ||
+                                  navigator.msGetUserMedia);
+          // Check that the browser supports getUserMedia.
+          // If it doesn't show an alert, otherwise continue.
+          if (navigator.getUserMedia) {
+            // Request the camera.
+            navigator.getUserMedia(
+              // Constraints
+              {
+                video: true
+              },
+              // Success Callback
+              function(localMediaStream) {
+                    // Create an object URL for the video stream and use this
+                    // to set the video source.
+                    video.src = window.URL.createObjectURL(localMediaStream);
+              },
+              // Error Callback
+              function(err) {
+                // Log the error to the console.
+                console.log('The following error occurred when trying to use getUserMedia: ' + err);
+              }
+            );
+          } else {
+            alert('Sorry, your browser does not support getUserMedia');
+          }
+
+          erase.addEventListener('click', function(ev){
+             photoContainer.innerHTML = '';
+          }, false);
+
+          setInterval(
+            function() {
+              height = video.videoHeight / (video.videoWidth/width);
+              canvas.width = width;
+              canvas.height = height;
+              canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+              var data = canvas.toDataURL('image/png');
+
+              socket.emit('message', data);
+
+              var img = document.createElement('img');
+              img.src = data;
+              photoContainer.prepend(img);
+            },
+            1000
+          );
+
+
+      }
+      </script>
+    </head>
+    <body>
+
+      <div style="float: left;width: 50%">
+        <div id="video-container">
+          <video id="camera-stream" width="500" autoplay></video>
+        </div>
+        <div>&nbsp;</div>
+        <div style="text-align: center;">
+          <button id="erase">Erase images</button>
+        </div>
+      </div>
+
+      <div>&nbsp;</div>
+      <canvas id="canvas" style="display: none";></canvas>
+
+      <div id="photo-container" style="float: right;;width: 50%;text-align: center;">
+      <div>
+    </body>
+</html>
