@@ -53,20 +53,14 @@ io.sockets.on('connection', function (socket) {
 
             });*/
             microsoftHanbdler.analyze(message.url, function(err, res, body) {
-              console.log(body);
-                if (!err) {
-                    if (typeof body == 'object' && typeof body.error == "undefined") {
-                      body.forEach(function(data) {
-                        socket.emit('score', {id: message.id, response: data})
+                  if (typeof body == 'object' && typeof body.error == "undefined" && body.length > 0) {
+                    body.forEach(function(data) {
+                      socket.emit('score', {id: message.id, response: data})
 
-                      });
-                    } else {
-                      socket.emit('score', 'empty')
-                    }
-                } else {
-                  socket.emit('score', 'empty')
-                  console.log(err);
-                }
+                    });
+                  } else {
+                    socket.emit('score', 'empty')
+                  }
             })
 
         }
@@ -74,5 +68,5 @@ io.sockets.on('connection', function (socket) {
 
 });
 
-
+console.log("http server started");
 server.listen(3000);
